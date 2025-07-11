@@ -1,0 +1,12 @@
+[project]
+name = "slack-flights-canvas"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "flask>=3.1.1",
+    "python-dotenv==1.1.1",
+    "requests>=2.32.4",
+    "slack-bolt>=1.23.0",
+]
