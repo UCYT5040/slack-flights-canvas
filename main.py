@@ -130,8 +130,22 @@ def parse_lines(lines):
     :return: List of tuples (text, line_id) for each successfully parsed line.
     """
     # Ensure the bot is mentioned somewhere in the text
-    if not any(f"@{bot_id}" in line for line in lines):
-        logging.info("Bot not mentioned in the text.")
+    canvas_config = None
+    for line in lines:
+        if f"@{bot_id}" in line:
+            canvas_config = {}
+            soup = BeautifulSoup(line, "html.parser")
+            p_line = soup.find("p", class_="line")
+            text = ' '.join(p_line.stripped_strings)
+            if text:
+                text = text.replace(f"@{bot_id}", "").strip()
+                try:
+                    canvas_config = json_loads(text)
+                except JSONDecodeError:
+                    pass
+            break
+    if canvas_config is None:
+        logging.info("No mention of the bot found in the canvas file.")
         return []
     results = []
     i = 0
