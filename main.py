@@ -1,5 +1,6 @@
 import logging
 import os
+from json import loads as json_loads
 from re import compile
 
 from bs4 import BeautifulSoup
@@ -8,6 +9,8 @@ from flask import Flask, request
 from requests import get
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
+
+VERSION = "v1"
 
 flight_code_pattern = compile(
     r'(?P<ICAO>\b[A-Z]{3}\d{1,4}\b)|'
@@ -30,6 +33,68 @@ auth_test_result = app.client.auth_test()
 bot_id = auth_test_result["user_id"]
 
 
+def scrape_flightaware(flight_number):
+    omnisearch_url = "https://www.flightaware.com/ajax/ignoreall/omnisearch/flight.rvt"
+    omnisearch_params = {
+        "v": "50",
+        "locale": "en_US",
+        "searchterm": flight_number,
+        "q": flight_number
+    }
+    headers = {
+        "Host": "www.flightaware.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+    }
+    resp = get(omnisearch_url, params=omnisearch_params, headers=headers)
+    if resp.status_code != 200:
+        logging.error(f"Failed to fetch ident from omnisearch for {flight_number}: {resp.status_code}")
+        return None
+
+    data = resp.json()
+    if not data.get("data") or not len(data["data"]):
+        logging.info(f"No ident found for {flight_number} via omnisearch.")
+        return None
+    ident = data["data"][0]["ident"]
+
+    url = f"https://www.flightaware.com/live/flight/{ident}"
+    flight_page = get(url, headers=headers)
+    if flight_page.status_code == 200:
+        soup = BeautifulSoup(flight_page.text, "html.parser")
+        script = soup.find("script", string=lambda text: text and "var trackpollGlobals" in text)
+        if script:
+            script_content = script.string.replace("var trackpollGlobals = ", "", 1)
+            script_content = script_content[::-1].replace(";", "", 1).strip()[::-1]
+            trackpoll_globals = json_loads(script_content)
+            data_url = f"https://www.flightaware.com/ajax/trackpoll.rvt"
+            params = {
+                "token": trackpoll_globals["TOKEN"],
+                "locale": "en_US",
+                "summary": 1
+            }
+            data_response = get(data_url, params=params, headers=headers)
+            if data_response.status_code == 200:
+                data = data_response.json()
+                flight_data = list(data.get("flights", {}).values())[0]
+                if not flight_data:
+                    logging.info(f"No flight data found for {flight_number}. Response: {data_response.text}")
+                    return None
+                return {
+                    "airline": flight_data.get("airline", {}).get("shortName", "Unknown Airline"),
+                    "identifier": flight_data.get("codeShare", {}).get("ident", ident),
+                    "link": url,
+                    "origin": {
+                        "airport": flight_data.get("origin", {}).get("friendlyName", "Unknown Origin"),
+                        "iata": flight_data.get("origin", {}).get("iata", "???")
+                    },
+                    "destination": {
+                        "airport": flight_data.get("destination", {}).get("friendlyName", "Unknown Destination"),
+                        "iata": flight_data.get("destination", {}).get("iata", "???")
+                    }
+                }
+    logging.error(f"Failed to fetch flight data from FlightAware for {flight_number}: {flight_page.status_code}")
+    return None
+
+
 def get_flight_data(text):
     """
     Finds flight numbers in the text and returns flight tracking data.
@@ -39,48 +104,22 @@ def get_flight_data(text):
     results = []
 
     for match in flight_code_pattern.finditer(text):
-        params = {
-            "access_key": os.environ.get("AVIATION_STACK_TOKEN"),
-        }
-        code_type = match.lastgroup
+        code_type = match.lastgroup  # Code type does not matter to FlightAware (this is leftover from previous API)
         code_value = match.group(code_type)
-        if code_type == "ICAO":
-            params["flight_icao"] = code_value
-        elif code_type == "IATA":
-            params["flight_iata"] = code_value
-        elif code_type == "number":
-            params["flight_number"] = code_value
-        else:
-            logging.warning(f"Unexpected flight code type: {code_type}")
+
+        data = scrape_flightaware(code_value)
+        if not data:
+            logging.info(f"No flight data found for {code_value}.")
             continue
-
-        response = get("https://api.aviationstack.com/v1/flights", params=params)
-        data = response.json().get("data", [])
-
-        if response.status_code == 200:
-            if data:
-                flight_info = data[0]
-                iata_number = flight_info["flight"]["iata"]
-                airline = flight_info["airline"]["name"]
-                depart_from_iata = flight_info["departure"]["iata"]
-                depart_from_airport = flight_info["departure"]["airport"]
-                arrive_at_iata = flight_info["arrival"]["iata"]
-                arrive_at_airport = flight_info["arrival"]["airport"]
-                results.append(
-                    f"✈ `{iata_number}` ({airline}) __{depart_from_airport}__ (`{depart_from_iata}`) ⮕ __{arrive_at_airport}__ (`{arrive_at_iata}`)"
-                )
-            else:
-                logging.info(f"No flight data found for {code_type}: {code_value}")
-        else:
-            logging.error(
-                f"Error fetching flight data for {code_type}: {code_value} - {response.status_code} {response.text}")
-    else:
-        logging.info("No flight codes found in the text:", text)
+        results.append(
+            f"✈ [{data['identifier']}]({data['link']}) ({data['airline']}) __{data['origin']['airport']}__ "
+            f"(`{data['origin']['iata']}`) ⮕ __{data['destination']['airport']}__ (`{data['destination']['iata']}`)"
+        )
 
     results = list(set(results))
 
     if results:
-        return f"**⬆ FLIGHT INFO ⬆** {', '.join(results)}"
+        return f"**⬆ FLIGHT INFO ({VERSION}) ⬆** {',\t'.join(results)}"
     return None
 
 
@@ -98,24 +137,33 @@ def parse_lines(lines):
     i = 0
     while i < len(lines):
         line = lines[i]
-        if i + 1 < len(lines):
-            next_line = lines[i + 1]
-            if next_line.count("⬆") == 2:  # TODO: Better way to check if lines have already been processed
-                i += 2
-                continue
+        if "FLIGHT INFO" in line:
+            i += 1
+            continue
         soup = BeautifulSoup(line, "html.parser")
         p_line = soup.find("p", class_="line")
         if not p_line:
             i += 1
             continue
+        line_id = p_line.get("id", None)
+        replace = False
+        if i + 1 < len(lines):
+            next_line = lines[i + 1]
+            if f"FLIGHT INFO ({VERSION})" in next_line:
+                i += 2
+                continue
+            elif f"FLIGHT INFO" in next_line:
+                replace = True
+                next_p_line = BeautifulSoup(next_line, "html.parser").find("p", class_="line")
+                line_id = next_p_line.get("id", None)
+                i += 2
         text = ' '.join(p_line.stripped_strings)
         if not text:
             i += 1
             continue
-        line_id = p_line.get("id", None)
         flight_data = get_flight_data(text)
         if flight_data:
-            results.append((flight_data, line_id))
+            results.append((flight_data, line_id, replace))
         i += 1
     return results
 
@@ -145,12 +193,12 @@ def handle_file_change(event, say):
 
             results = parse_lines(lines)
             if results:
-                for text, line_id in results:
+                for text, line_id, replace in results:
                     app.client.canvases_edit(
                         canvas_id=file_info["file"]["id"],
                         changes=[
                             {
-                                "operation": "insert_after",
+                                "operation": "replace" if replace else "insert_after",
                                 "section_id": line_id,
                                 "document_content": {
                                     "type": "markdown",
