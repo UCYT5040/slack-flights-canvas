@@ -1,6 +1,6 @@
 import logging
 import os
-from json import loads as json_loads
+from json import loads as json_loads, JSONDecodeError
 from re import compile
 
 from bs4 import BeautifulSoup
