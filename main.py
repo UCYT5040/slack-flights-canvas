@@ -79,7 +79,7 @@ def scrape_flightaware(flight_number):
                     logging.info(f"No flight data found for {flight_number}. Response: {data_response.text}")
                     return None
                 return {
-                    "airline": flight_data.get("airline", {}).get("shortName", "Unknown Airline"),
+                    "airline": (flight_data.get("airline", {}) or {}).get("shortName", "Unknown Airline"),
                     "identifier": flight_data.get("codeShare", {}).get("ident", ident),
                     "link": url,
                     "origin": {
