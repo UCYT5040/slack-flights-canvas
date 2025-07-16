@@ -1,4 +1,4 @@
-from re import compile
+from regex import compile
 from typing import Optional
 
 json_pattern = compile(r'\{(?:[^{}]|(?R))*\}')
