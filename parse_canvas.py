@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup, PageElement
 class CanvasLine:
     def __init__(self, element: PageElement):
         self.element = element
-        self.text = element.get_text(strip=True)
+        self.text = element.get_text(separator=" ", strip=True)
         self.id = element.get('id', None)
 
     def __contains__(self, item):
