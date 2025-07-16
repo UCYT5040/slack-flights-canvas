@@ -1,4 +1,9 @@
 import logging
+from json import loads as json_loads
+
+from bs4 import BeautifulSoup
+from requests import get
+
 
 def scrape_flightaware(flight_number):
     omnisearch_url = "https://www.flightaware.com/ajax/ignoreall/omnisearch/flight.rvt"
