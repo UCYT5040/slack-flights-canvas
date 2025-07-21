@@ -1,6 +1,6 @@
 import {icon as leaflet_icon, marker as leaflet_marker} from "leaflet";
 
-interface IconOptions {
+export interface IconOptions {
     main: number;  // URL of the main icon image
     flipped?: number  // URL of the flipped icon image (optional)
     rotate?: number  // Apply rotation (in degrees) to the icon (optional)
@@ -19,7 +19,7 @@ interface IconOptions {
 }
 
 // TODO: Implement popup functionality through MarkerState
-interface MarkerState {
+export interface MarkerState {
     direction?: number;  // Current direction of the marker (default is 0)
     flipped?: boolean;  // Whether the marker is flipped (default is false)
     coordinates: coordinates;  // Coordinates of the marker
