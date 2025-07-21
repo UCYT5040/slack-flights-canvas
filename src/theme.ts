@@ -6,7 +6,6 @@ export interface ThemeOptions {
     tile_layer: {
         url: string;  // URL of the tile layer
         attribution: string;  // Attribution text for the tile layer
-        ext: string;  // File extension for the tile layer images
     };
     icons: {
         airplane: IconOptions;
@@ -43,7 +42,6 @@ export class Theme {
             minZoom: 1,
             maxZoom: 16,
             attribution: this.options.tile_layer.attribution,
-            ext: this.options.tile_layer.ext
         });
     }
 

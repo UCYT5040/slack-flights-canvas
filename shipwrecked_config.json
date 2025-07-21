@@ -15,10 +15,10 @@
           "lon": -71.010265,
           "themes": {
             "Shipwrecked": {
-              "icon": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc11a3f4e1bb2378c4f3bd9ef57843bb603ecb0c_island2.png"
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc11a3f4e1bb2378c4f3bd9ef57843bb603ecb0c_island2.png"
             },
             "Basic": {
-              "icon": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc83cff7b47faf4d231bbf405892d97a6663a3a9_icons8-island.svg"
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc83cff7b47faf4d231bbf405892d97a6663a3a9_icons8-island.svg"
             }
           }
         }
@@ -27,9 +27,8 @@
         {
           "name": "Shipwrecked",
           "tile_layer": {
-            "href": "https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.{ext}",
+            "url": "https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg",
             "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://www.stamen.com/\" target=\"_blank\">Stamen Design</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
-            "ext": "jpg"
           },
           "icons": {
             "airplane": {
@@ -69,9 +68,8 @@
         {
           "name": "Basic",
           "tile_layer": {
-            "href": "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}",
-            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
-            "ext": "png"
+            "url": "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png",
+            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
           },
           "icons": {
             "airplane": {
