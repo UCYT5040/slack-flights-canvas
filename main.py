@@ -4,7 +4,7 @@ import threading
 import time
 
 from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask, request, render_template
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 
@@ -27,7 +27,7 @@ auth_test_result = app.client.auth_test()
 bot_id = auth_test_result["user_id"]
 
 tracked_files = []
-
+tracking_map_data = {}  # {file_id: {elapsed_dist: int, remaining_dist: int, eta: int, updated_at: datetime}}
 
 def update_file(file_id: str):
     editor = CanvasEditor(
@@ -39,6 +39,8 @@ def update_file(file_id: str):
         if file_id not in tracked_files:
             tracked_files.append(file_id)
             logging.info(f"Started tracking file: {file_id}")
+        if editor.map_enabled():
+            tracking_map_data[file_id] = editor.get_map_data()
     else:
         if file_id in tracked_files:
             tracked_files.remove(file_id)
@@ -113,6 +115,20 @@ def handle_file_change(event, say):
         logging.error(f"Error handling file change for {file_id}: {e}")
         if os.environ.get("DEBUG", "false").lower() == "true":
             print_exc()
+
+
+@flask_app.route("/map/<file_id>")
+def map_view(file_id):
+    """
+    Serve the map view for a specific file.
+    """
+    if file_id not in tracking_map_data:
+        logging.warning(f"File {file_id} is not being tracked.")
+        return render_template("map_404.html"), 404
+    map_data = tracking_map_data[file_id]
+
+    return render_template("map.html", server_data=map_data)
+
 
 
 @flask_app.route("/slack/events", methods=["POST"])

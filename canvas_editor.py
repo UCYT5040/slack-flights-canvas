@@ -23,7 +23,6 @@ def clean_canvas(content: str) -> str:
     )
 
 
-
 class CanvasEditResult(Enum):
     CURRENTLY_TRACKING = 1  # Keep sending edits on an interval
     NOT_TRACKING = 2  # Stop sending edits, no tracking
@@ -45,7 +44,10 @@ class CanvasEditor:
         self.bot_mention_line: Optional[CanvasLine] = None
         self.tracking_last_updated_line: Optional[CanvasLine] = None
         self.config = {}  # Canvas-specific configuration
+        self.map_data = {}
         self.load_canvas(file_id)
+        if self.map_enabled():
+            self.add_map_pois()
         if not self.canvas_content:
             logging.error(f"Failed to load canvas content for file {file_id}")
             return
@@ -54,6 +56,7 @@ class CanvasEditor:
             return
         self.load_config()
         self.add_flight_info()
+
         locks.remove(file_id)  # Release the lock after editing is done
 
     def get_canvas_url(self, file_id: str) -> Optional[str]:
@@ -157,6 +160,28 @@ class CanvasEditor:
         if not self.config:
             logging.warning("No configuration found in the canvas")
 
+    def map_enabled(self) -> bool:
+        """
+        Checks if the map is enabled in the canvas configuration.
+        :return: True if the map is enabled, False otherwise.
+        """
+        if not self.config:
+            logging.error("Configuration is not loaded")
+            return False
+        if 'tracking' not in self.config:
+            logging.error("Tracking configuration is missing")
+            return False
+        if not self.config['tracking'].get('enabled', False):
+            logging.warning("Tracking is not enabled in the configuration")
+            return False
+        if 'map' not in self.config['tracking']:
+            logging.error("Map configuration is missing in the tracking settings")
+            return False
+        if not self.config['tracking']['map'].get('enabled', False):
+            logging.warning("Map is not enabled in the tracking configuration")
+            return False
+        return True
+
     def find_tracking_last_updated(self) -> Optional[datetime]:
         if not self.canvas_content:
             logging.error("Canvas content is not loaded")
@@ -210,9 +235,9 @@ class CanvasEditor:
                 logging.error(f"Failed to parse arrival date '{date_str}': {e}")
                 continue
         for date in parsed_arrival_dates:
-            if abs((date - today).total_seconds()) // (60*60*24*1) == 0 or (  # 1 hour of difference is acceptable
-                    abs((date - today).total_seconds() / (60*60*1)) <= 1 and
-                    (date - today).total_seconds() // (60*60*24*1) in [-1, 0, 1]
+            if abs((date - today).total_seconds()) // (60 * 60 * 24 * 1) == 0 or (  # 1 hour of difference is acceptable
+                    abs((date - today).total_seconds() / (60 * 60 * 1)) <= 1 and
+                    (date - today).total_seconds() // (60 * 60 * 24 * 1) in [-1, 0, 1]
             ):
                 return True
         return False
@@ -226,7 +251,7 @@ class CanvasEditor:
             return False
         last_updated = self.find_tracking_last_updated()
         now = datetime.now()
-        if not last_updated or (now - last_updated).total_seconds() / (60*1) >= 2:
+        if not last_updated or (now - last_updated).total_seconds() / (60 * 1) >= 2:
             return True
         return False
 
@@ -268,6 +293,77 @@ class CanvasEditor:
             tracking_line.text = text
             self.tracking_last_updated_line = tracking_line
 
+    def add_map_pois(self):
+        """
+        Adds configured points of interest (POIs) to the map data.
+        """
+        if not self.map_enabled():
+            logging.warning("Map is not enabled, skipping POI addition")
+            return
+        for poi in self.config.get('tracking', {}).get('map', {}).get('pois', []):
+            poi_name = poi.get('name', None)
+            poi_image = poi.get('image', None)
+            poi_lat = poi.get('lat', 0.0)
+            poi_lon = poi.get('lon', 0.0)
+            self.map_data.setdefault('pois', []).append({
+                "name": poi_name,
+                "imageUrl": poi_image,
+                "lat": poi_lat,
+                "lon": poi_lon
+            })
+
+    def update_map_data(self, flight_info):
+        """
+        Updates the map data with the flight information.
+        :param flight_info: The flight information to update the map with.
+        """
+        if not self.map_enabled():
+            logging.warning("Map is not enabled, skipping map data update")
+            return
+        if not flight_info:
+            logging.error("Flight info is empty, cannot update map data")
+            return
+        flight_number = flight_info.get('identifier', None)
+        if not flight_number:
+            logging.error("Flight number is missing in flight info, cannot update map data")
+            return
+        origin_airport = {
+            "name": flight_info.get('origin', {}).get('airport', 'Unknown Origin'),
+            "lat": flight_info.get('origin', {}).get('coordinates', {}).get('lat', 0.0),
+            "lon": flight_info.get('origin', {}).get('coordinates', {}).get('lon', 0.0)
+        }
+        destination_airport = {
+            "name": flight_info.get('destination', {}).get('airport', 'Unknown Destination'),
+            "lat": flight_info.get('destination', {}).get('coordinates', {}).get('lat', 0.0),
+            "lon": flight_info.get('destination', {}).get('coordinates', {}).get('lon', 0.0)
+        }
+        if origin_airport not in self.map_data.get('airports', []):
+            self.map_data.setdefault('airports', []).append(origin_airport)
+        if destination_airport not in self.map_data.get('airports', []):
+            self.map_data.setdefault('airports', []).append(destination_airport)
+        if flight_number not in self.map_data.get('flights', {}):
+            self.map_data.setdefault('flights', {})[flight_number] = {
+                "origin": origin_airport,
+                "destination": destination_airport,
+                "elapsedDistance": flight_info.get('distance', {}).get('elapsed', 0),
+                "remainingDistance": flight_info.get('distance', {}).get('remaining', 0),
+                "speed": flight_info.get('speed', 0),
+                "lastUpdatedAt": datetime.now().isoformat(),
+                "waypoints": flight_info.get('waypoints', [])
+            }
+        logging.info(f"Map data updated for flight {flight_number}")
+
+    def get_map_data(self) -> dict:
+        """
+        Returns the map data for the canvas.
+        :return: A dictionary containing the map data.
+        """
+        if not self.map_enabled():
+            logging.warning("Map is not enabled, returning empty map data")
+            return {}
+        self.add_map_pois()
+        return self.map_data
+
     def add_flight_info(self):
         """
         Adds flight information to the canvas when it is not already present.
@@ -306,6 +402,8 @@ class CanvasEditor:
                     logging.warning(
                         f"Failed to scrape flight info for {flight}")  # Not an error because flight numbers may be inaccurate
                     continue
+                if self.map_enabled():
+                    self.update_map_data(flight_info)
                 flight_number = flight_info.get('identifier', flight)
                 if flight_number in info_messages:
                     logging.info(f"Flight info for {flight_number} already exists, skipping")

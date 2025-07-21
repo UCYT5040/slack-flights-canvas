@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flight Map</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/leaflet.css') }}">
+    <meta name="server-data" id="server-data" content='{{ server_data|tojson|e }}'>
+</head>
+<body id="map">
+<script src="{{ url_for('static', filename='dist/index.js') }}" type="module"></script>
+</body>
+</html>
