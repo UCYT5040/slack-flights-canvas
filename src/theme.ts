@@ -35,7 +35,7 @@ export class Theme {
     }
 
     getIcon(name: string): IconOptions | undefined {
-        return this.icons[name];
+        return this.options.icons[name];
     }
 
     getTileLayer(): TileLayer {
