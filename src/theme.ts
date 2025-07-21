@@ -17,7 +17,7 @@ interface ThemeOptions {
 
 export class Theme {
     private options: ThemeOptions;
-    private pois: { string: IconOptions } = {};  // Points of Interest (POIs) icons for this theme
+    private pois: { [key: string]: IconOptions } = {};  // Points of Interest (POIs) icons for this theme
 
     constructor(options: ThemeOptions) {
         this.options = options;
