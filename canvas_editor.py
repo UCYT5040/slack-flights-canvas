@@ -147,6 +147,8 @@ class CanvasEditor:
                 if not config_json_text:
                     logging.warning("No JSON found in bot mention line")
                     return
+                # Slack uses typographical quotes, so we need to replace them with regular quotes
+                config_json_text = config_json_text.replace('“', '"').replace('”', '"')
                 try:
                     self.config = loads(config_json_text)
                 except JSONDecodeError as e:
