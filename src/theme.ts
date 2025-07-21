@@ -1,7 +1,7 @@
 import {IconOptions} from './marker';
 import {tileLayer, TileLayer} from 'leaflet';
 
-interface ThemeOptions {
+export interface ThemeOptions {
     name: string;  // Name of the theme
     tile_layer: {
         url: string;  // URL of the tile layer
