@@ -22,7 +22,7 @@ export interface IconOptions {
 export interface MarkerState {
     direction?: number;  // Current direction of the marker (default is 0)
     flipped?: boolean;  // Whether the marker is flipped (default is false)
-    coordinates: coordinates;  // Coordinates of the marker
+    coordinates: Coordinates;  // Coordinates of the marker
     zIndexOffset?: number;  // Z-index offset for the marker (optional)
 }
 
