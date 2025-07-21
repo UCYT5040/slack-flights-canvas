@@ -10,7 +10,7 @@ interface ThemeOptions {
     };
     icons: {
         airplane: IconOptions;
-        airport: IconsOptions;
+        airport: IconOptions;
     }
 }
 
