@@ -1,0 +1,112 @@
+{
+  "tracking": {
+    "enabled": true,
+    "arrival_dates": [
+      "2025-08-07",
+      "2025-08-08",
+    ],
+    "map": {
+      "enabled": true,
+      "pois": [
+        {
+          "name": "Cathleen Stone Island",
+          "image": "https://shipwrecked.hackclub.com/logo-outline.svg",
+          "lat": 42.314133,
+          "lon": -71.010265,
+          "themes": {
+            "Shipwrecked": {
+              "icon": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc11a3f4e1bb2378c4f3bd9ef57843bb603ecb0c_island2.png"
+            },
+            "Basic": {
+              "icon": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc83cff7b47faf4d231bbf405892d97a6663a3a9_icons8-island.svg"
+            }
+          }
+        }
+      ],
+      "themes": [
+        {
+          "name": "Shipwrecked",
+          "tile_layer": {
+            "href": "https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.{ext}",
+            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://www.stamen.com/\" target=\"_blank\">Stamen Design</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+            "ext": "jpg"
+          },
+          "icons": {
+            "airplane": {
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/8cfc2a78921b50c382dfa277fdaefd88ac3b9315_ship2.png",
+              "flipped": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/297455d51c8f363e33b8776ec6551b8822ec838d_ship2-flipped.png",
+              "rotate": 270,
+              "size": [
+                50,
+                50
+              ],
+              "anchor": [
+                25,
+                25
+              ],
+              "popup_anchor": [
+                0,
+                -25
+              ]
+            },
+            "airport": {
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc11a3f4e1bb2378c4f3bd9ef57843bb603ecb0c_airport.png",
+              "size": [
+                50,
+                50
+              ],
+              "anchor": [
+                25,
+                25
+              ],
+              "popup_anchor": [
+                0,
+                -25
+              ]
+            }
+          }
+        },
+        {
+          "name": "Basic",
+          "tile_layer": {
+            "href": "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}",
+            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+            "ext": "png"
+          },
+          "icons": {
+            "airplane": {
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/ee918de9195e004cce5defbe47eaba0a6c4ed07a_icons8-plane_1_.svg",
+              "size": [
+                50,
+                50
+              ],
+              "anchor": [
+                25,
+                25
+              ],
+              "popup_anchor": [
+                0,
+                -25
+              ]
+            },
+            "airport": {
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/c50d192d62515308001abb2fc4a7e119df0d908c_icons8-pin_1_.svg",
+              "size": [
+                50,
+                50
+              ],
+              "anchor": [
+                25,
+                25
+              ],
+              "popup_anchor": [
+                0,
+                -25
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
