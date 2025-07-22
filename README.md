@@ -20,7 +20,7 @@ npm run build
 
 Set the default map file ID (from Slack):
 
-```shell
+```dotenv
 DEFAULT_FILE_ID=""
 ```
 
@@ -37,3 +37,6 @@ On the same line that you mention the bot, add a JSON object or a URL (ending in
 
 See [shipwrecked_config.json](shipwrecked_config.json) for an example configuration made for Hack Club’s Shipwrecked
 event.
+
+If you’ve enabled the map feature, visit `/map/<canvas_file_id>` to see the map. Prepend `/api` for a programmatic
+interface. Set `DEFAULT_FILE_ID` to redirect `/` to a specific map file.
