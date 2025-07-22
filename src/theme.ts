@@ -1,5 +1,6 @@
 import {IconOptions} from './marker';
 import {tileLayer, TileLayer} from 'leaflet';
+import {PathOptions} from "./path";
 
 export interface ThemeOptions {
     name: string;  // Name of the theme
@@ -10,6 +11,10 @@ export interface ThemeOptions {
     icons: {
         airplane: IconOptions;
         airport: IconOptions;
+    },
+    paths: {
+        elapsed: PathOptions;
+        remaining: PathOptions;
     }
 }
 
@@ -35,6 +40,10 @@ export class Theme {
 
     getIcon(name: string): IconOptions | undefined {
         return this.options.icons[name];
+    }
+
+    getPath(name: 'elapsed' | 'remaining'): PathOptions {
+        return this.options.paths[name];
     }
 
     getTileLayer(): TileLayer {

@@ -63,6 +63,19 @@
                 -25
               ]
             }
+          },
+          "paths": {
+            "elapsed": {
+              "color": "#bdbdbd",
+              "weight": 3,
+              "opacity": 0.8
+            },
+            "remaining": {
+              "color": "#ff5722",
+              "weight": 4,
+              "dashArray": "10, 15",
+              "lineCap": "square"
+            }
           }
         },
         {
@@ -101,6 +114,18 @@
                 0,
                 -25
               ]
+            }
+          },
+          "paths": {
+            "elapsed": {
+              "color": "#001f3e",
+              "weight": 3,
+              "opacity": 0.5
+            },
+            "remaining": {
+              "color": "#285981",
+              "weight": 3,
+              "opacity": 0.5
             }
           }
         }
