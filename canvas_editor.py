@@ -7,7 +7,7 @@ from typing import Optional
 from requests import get
 from slack_bolt import App
 
-from find_json import find_json
+from find_json import find_json, find_json_url
 from flight_number_extraction import extract_flight_numbers
 from info_message_format import FLIGHT_INFO_FORMAT_VERSION, FLIGHT_INFO_TITLE, format_flight_info_message, \
     combine_flight_info_messages
@@ -148,8 +148,20 @@ class CanvasEditor:
             if line == self.bot_mention_line:
                 config_json_text = find_json(line.text)
                 if not config_json_text:
-                    logging.warning("No JSON found in bot mention line")
-                    return
+                    # Check for a JSON URL instead
+                    config_json_url = find_json_url(line.text)
+                    if config_json_url:
+                        logging.info(f"Found JSON URL in bot mention line: {config_json_url}")
+                        try:
+                            response = get(config_json_url)
+                            response.raise_for_status()
+                            config_json_text = response.text
+                        except Exception as e:
+                            logging.error(f"Failed to fetch JSON from URL {config_json_url}: {e}")
+                            return
+                    else:
+                        logging.warning("No JSON configuration found in the bot mention line")
+                        return
                 # Slack uses typographical quotes, so we need to replace them with regular quotes
                 config_json_text = config_json_text.replace('“', '"').replace('”', '"')
                 try:
