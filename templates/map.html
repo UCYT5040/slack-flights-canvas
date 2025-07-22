@@ -8,11 +8,45 @@
             margin: 0;
             height: 100vh;
         }
+
+        .leaflet-tile-pane {
+            filter: brightness(90%) contrast(96%); /* Dim the map tiles for improved marker visibility */
+        }
+
+        #theme-select-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1500;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem;
+        }
+
+        #theme-select {
+            border: 1px solid #ccc;
+            border-radius: 0;
+            padding: 0.25rem;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #tracking-status {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            z-index: 1500;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem;
+        }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='dist/leaflet.css') }}">
     <meta name="server-data" id="server-data" content='{{ server_data|tojson|e }}'>
 </head>
 <body id="map">
-<script src="{{ url_for('static', filename='dist/index.js') }}" type="module"></script>
+<div id="theme-select-container">
+    <label for="theme-select">Select a theme</label>
+    <select id="theme-select"></select>
+</div>
+<span id="tracking-status"></span>
+<script src="{{ index_file }}" type="module"></script>
 </body>
 </html>
