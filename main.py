@@ -2,9 +2,10 @@ import logging
 import os
 import threading
 import time
+from json import load
 
 from dotenv import load_dotenv
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, url_for, redirect
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 
@@ -45,6 +46,9 @@ def update_file(file_id: str):
         if file_id in tracked_files:
             tracked_files.remove(file_id)
             logging.info(f"Stopped tracking file: {file_id}")
+        if editor.map_enabled():
+            tracking_map_data[file_id] = editor.get_map_data()
+
 
 
 def update_tracked_files():
@@ -99,6 +103,15 @@ def periodic_file_check():
 threading.Thread(target=update_tracked_files, daemon=True).start()
 threading.Thread(target=periodic_file_check, daemon=True).start()
 
+def get_parcel_asset(file_name: str):
+    with open("static/dist/parcel-manifest.json", "r") as f:
+        parcel_manifest = load(f)
+    asset_path = parcel_manifest.get(file_name)
+    if not asset_path:
+        logging.error(f"Asset {file_name} not found in parcel manifest.")
+        return None
+    return url_for('static', filename="dist" + asset_path)
+
 
 @app.event("file_change")
 def handle_file_change(event, say):
@@ -117,6 +130,14 @@ def handle_file_change(event, say):
             print_exc()
 
 
+@flask_app.route("/")
+def index():
+    if "DEFAULT_FILE_ID" in os.environ:
+        default_file_id = os.environ["DEFAULT_FILE_ID"]
+        return redirect(url_for("map_view", file_id=default_file_id))
+    return "File not found", 404
+
+
 @flask_app.route("/map/<file_id>")
 def map_view(file_id):
     """
@@ -127,8 +148,22 @@ def map_view(file_id):
         return render_template("map_404.html"), 404
     map_data = tracking_map_data[file_id]
 
-    return render_template("map.html", server_data=map_data)
+    return render_template("map.html", server_data=map_data,
+                           index_file=get_parcel_asset("index.ts"))
 
+
+@flask_app.route("/api/map/<file_id>")
+def map_api(file_id):
+    """
+    API endpoint to get the map data for a specific file.
+    """
+    if file_id == "default" and "DEFAULT_FILE_ID" in os.environ:
+        file_id = os.environ["DEFAULT_FILE_ID"]
+    if file_id not in tracking_map_data:
+        logging.warning(f"File {file_id} is not being tracked.")
+        return {"error": "File not found"}, 404
+    map_data = tracking_map_data[file_id]
+    return map_data, 200
 
 
 @flask_app.route("/slack/events", methods=["POST"])

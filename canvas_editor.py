@@ -45,6 +45,7 @@ class CanvasEditor:
         self.tracking_last_updated_line: Optional[CanvasLine] = None
         self.config = {}  # Canvas-specific configuration
         self.map_data = {}
+        self.initial_map_update = True
         self.load_canvas(file_id)
         if not self.canvas_content:
             logging.error(f"Failed to load canvas content for file {file_id}")
@@ -320,6 +321,11 @@ class CanvasEditor:
             return
         self.map_data["pois"] = self.config['tracking']['map'].get('pois', [])
         self.map_data["themes"] = self.config['tracking']['map'].get('themes', [])
+        self.map_data["tracking"] = {
+            "arrivalDates": self.config['tracking'].get('arrival_dates', []),
+            "currentlyTracking": self.track_now()
+        }
+        self.map_data["file_id"] = self.file_id
         logging.info("Map data initialized with configured POIs and themes")
 
 
@@ -352,16 +358,21 @@ class CanvasEditor:
             self.map_data.setdefault('airports', []).append(origin_airport)
         if destination_airport not in self.map_data.get('airports', []):
             self.map_data.setdefault('airports', []).append(destination_airport)
-        if flight_number not in self.map_data.get('flights', {}):
-            self.map_data.setdefault('flights', {})[flight_number] = {
-                "origin": origin_airport,
-                "destination": destination_airport,
-                "elapsedDistance": flight_info.get('distance', {}).get('elapsed', 0),
-                "remainingDistance": flight_info.get('distance', {}).get('remaining', 0),
-                "speed": flight_info.get('speed', 0),
-                "lastUpdatedAt": datetime.now().isoformat(),
-                "waypoints": flight_info.get('waypoints', [])
-            }
+        flights_list = self.map_data.setdefault('flights', [])
+        # Check if this flight already exists in the list (by identifier)
+        existing_flight = next((f for f in flights_list if f.get('identifier') == flight_number), None)
+        flight_entry = {
+            "identifier": flight_number,
+            "origin": origin_airport,
+            "destination": destination_airport,
+            "elapsedDistance": flight_info.get('distance', {}).get('elapsed', 0),
+            "remainingDistance": flight_info.get('distance', {}).get('remaining', 0),
+            "speed": flight_info.get('speed', 0),
+            "lastUpdatedAt": datetime.now().timestamp() * 1000  # Convert to milliseconds
+        }
+        if existing_flight:
+            flights_list.remove(existing_flight)
+        flights_list.append(flight_entry)
         logging.info(f"Map data updated for flight {flight_number}")
 
     def get_map_data(self) -> dict:
@@ -372,7 +383,6 @@ class CanvasEditor:
         if not self.map_enabled():
             logging.warning("Map is not enabled, returning empty map data")
             return {}
-        self.add_map_pois()
         return self.map_data
 
     def add_flight_info(self):
@@ -400,7 +410,7 @@ class CanvasEditor:
             if i < len(self.canvas_content):
                 next_line = self.canvas_content[i]
                 if FLIGHT_INFO_TITLE in next_line.text:
-                    if FLIGHT_INFO_FORMAT_VERSION in next_line.text and not self.track_now():
+                    if FLIGHT_INFO_FORMAT_VERSION in next_line.text and not (self.track_now() or (self.map_enabled() and self.initial_map_update)):
                         logging.info("Flight info already present")
                         continue
                     else:
@@ -434,6 +444,8 @@ class CanvasEditor:
                     line_id=line.id,
                     replace=False
                 )
+        if not self.initial_map_update:
+            self.initial_map_update = False
 
     def get_result(self):
         """
