@@ -3,7 +3,7 @@
     "enabled": true,
     "arrival_dates": [
       "2025-08-07",
-      "2025-08-08",
+      "2025-08-08"
     ],
     "map": {
       "enabled": true,
@@ -28,7 +28,7 @@
           "name": "Shipwrecked",
           "tile_layer": {
             "url": "https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg",
-            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://www.stamen.com/\" target=\"_blank\">Stamen Design</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+            "attribution": "&copy; <a href=\"https://www.stadiamaps.com/\" target=\"_blank\">Stadia Maps</a> &copy; <a href=\"https://www.stamen.com/\" target=\"_blank\">Stamen Design</a> &copy; <a href=\"https://openmaptiles.org/\" target=\"_blank\">OpenMapTiles</a> &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
           },
           "icons": {
             "airplane": {
@@ -49,14 +49,14 @@
               ]
             },
             "airport": {
-              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/cc11a3f4e1bb2378c4f3bd9ef57843bb603ecb0c_airport.png",
+              "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/67dc1b7ca7f8cbfd5fb4c27ba4d7f16c5fa699c3_airport.png",
               "size": [
                 50,
                 50
               ],
               "anchor": [
                 25,
-                25
+                45
               ],
               "popup_anchor": [
                 0,
@@ -66,12 +66,12 @@
           },
           "paths": {
             "elapsed": {
-              "color": "#bdbdbd",
-              "weight": 3,
-              "opacity": 0.8
+              "color": "#f1f4f7",
+              "weight": 2,
+              "dashArray": "4, 4"
             },
             "remaining": {
-              "color": "#ff5722",
+              "color": "#d0341a",
               "weight": 4,
               "dashArray": "10, 15",
               "lineCap": "square"
@@ -88,44 +88,47 @@
             "airplane": {
               "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/ee918de9195e004cce5defbe47eaba0a6c4ed07a_icons8-plane_1_.svg",
               "size": [
-                50,
-                50
+                30,
+                30
               ],
               "anchor": [
-                25,
-                25
+                15,
+                15
               ],
               "popup_anchor": [
                 0,
-                -25
-              ]
+                -15
+              ],
+              "rotate": 270
             },
             "airport": {
               "main": "https://hc-cdn.hel1.your-objectstorage.com/s/v3/c50d192d62515308001abb2fc4a7e119df0d908c_icons8-pin_1_.svg",
               "size": [
-                50,
-                50
+                30,
+                30
               ],
               "anchor": [
-                25,
-                25
+                15,
+                27.5
               ],
               "popup_anchor": [
                 0,
-                -25
+                -15
               ]
             }
           },
           "paths": {
             "elapsed": {
-              "color": "#001f3e",
+              "color": "#111f3e",
               "weight": 3,
-              "opacity": 0.5
+              "opacity": 0.5,
+              "dashArray": "5, 10"
             },
             "remaining": {
-              "color": "#285981",
+              "color": "#3f51b5",
               "weight": 3,
-              "opacity": 0.5
+              "opacity": 0.5,
+              "dashArray": "5, 10"
             }
           }
         }
