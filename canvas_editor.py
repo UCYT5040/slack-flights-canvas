@@ -46,8 +46,6 @@ class CanvasEditor:
         self.config = {}  # Canvas-specific configuration
         self.map_data = {}
         self.load_canvas(file_id)
-        if self.map_enabled():
-            self.add_map_pois()
         if not self.canvas_content:
             logging.error(f"Failed to load canvas content for file {file_id}")
             return
@@ -55,6 +53,10 @@ class CanvasEditor:
             logging.error(f"Bot mention line not found in canvas {file_id}")
             return
         self.load_config()
+        if self.map_enabled():
+            self.add_map_data()
+        else:
+            logging.info("Map is not enabled, skipping map data initialization")
         self.add_flight_info()
 
         locks.remove(file_id)  # Release the lock after editing is done
@@ -305,24 +307,21 @@ class CanvasEditor:
             tracking_line.text = text
             self.tracking_last_updated_line = tracking_line
 
-    def add_map_pois(self):
+    def add_map_data(self):
         """
-        Adds configured points of interest (POIs) to the map data.
+        Adds configured points of interest (POIs) and themes to the map data.
+        This does not verify the integrity of the configuration, it assumes that the configuration is valid.
         """
         if not self.map_enabled():
-            logging.warning("Map is not enabled, skipping POI addition")
+            logging.warning("Map is not enabled, skipping POI & theme addition")
             return
-        for poi in self.config.get('tracking', {}).get('map', {}).get('pois', []):
-            poi_name = poi.get('name', None)
-            poi_image = poi.get('image', None)
-            poi_lat = poi.get('lat', 0.0)
-            poi_lon = poi.get('lon', 0.0)
-            self.map_data.setdefault('pois', []).append({
-                "name": poi_name,
-                "imageUrl": poi_image,
-                "lat": poi_lat,
-                "lon": poi_lon
-            })
+        if not self.config or 'tracking' not in self.config or 'map' not in self.config['tracking']:
+            logging.error("Map configuration is missing in the tracking settings")
+            return
+        self.map_data["pois"] = self.config['tracking']['map'].get('pois', [])
+        self.map_data["themes"] = self.config['tracking']['map'].get('themes', [])
+        logging.info("Map data initialized with configured POIs and themes")
+
 
     def update_map_data(self, flight_info):
         """
