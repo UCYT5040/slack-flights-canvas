@@ -1,8 +1,8 @@
 import {icon as leaflet_icon, marker as leaflet_marker} from "leaflet";
 
 export interface IconOptions {
-    main: number;  // URL of the main icon image
-    flipped?: number  // URL of the flipped icon image (optional)
+    main: string;  // URL of the main icon image
+    flipped?: string  // URL of the flipped icon image (optional)
     rotate?: number  // Apply rotation (in degrees) to the icon (optional)
     size?: [  // Size of the icon (optional)
         number,  // Width of the icon
