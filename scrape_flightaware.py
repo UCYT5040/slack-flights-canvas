@@ -57,13 +57,26 @@ def scrape_flightaware(flight_number):
                     "origin": {
                         "airport": flight_data.get("origin", {}).get("friendlyName", "Unknown Origin"),
                         "iata": flight_data.get("origin", {}).get("iata", "???"),
-                        "departure_time": flight_data.get("takeoffTimes", {}).get("scheduled")
+                        "departure_time": flight_data.get("takeoffTimes", {}).get("scheduled"),
+                        "coordinates": {
+                            "lat": flight_data.get("origin", {}).get("coord", [0, 0])[1],
+                            "lon": flight_data.get("origin", {}).get("coord", [0, 0])[0]
+                        }
                     },
                     "destination": {
                         "airport": flight_data.get("destination", {}).get("friendlyName", "Unknown Destination"),
                         "iata": flight_data.get("destination", {}).get("iata", "???"),
-                        "arrival_time": flight_data.get("landingTimes", {}).get("scheduled")
-                    }
+                        "arrival_time": flight_data.get("landingTimes", {}).get("scheduled"),
+                        "coordinates": {
+                            "lat": flight_data.get("destination", {}).get("coord", [0, 0])[1],
+                            "lon": flight_data.get("destination", {}).get("coord", [0, 0])[0]
+                        }
+                    },
+                    "distance": {
+                        "elapsed": flight_data.get("distance", {}).get("elapsed", 0),
+                        "remaining": flight_data.get("distance", {}).get("remaining", 0)
+                    },
+                    "speed": flight_data.get("flightPlan", {}).get("speed", 0) if flight_data.get("flightPlan") else 0,
                 }
     logging.error(f"Failed to fetch flight data from FlightAware for {flight_number}: {flight_page.status_code}")
     return None
