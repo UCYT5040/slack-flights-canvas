@@ -2,18 +2,19 @@
   "name": "slack-flights-canvas",
   "version": "1.0.0",
   "description": "Ping your Slack bot in a canvas with flight numbers, and it will return information about each flight.",
-  "source": "src/index.ts",
-  "main": "static/dist/index.js",
+  "source": "src/dummy.html",
   "targets": {
-      "main": {
-         "includeNodeModules": true
-      }
-   },
+    "default": {
+      "includeNodeModules": true,
+      "distDir": "static/dist"
+    }
+  },
   "scripts": {
     "build": "parcel build && cpx \"node_modules/leaflet/dist/leaflet.css\" static/dist/ && cpx \"node_modules/leaflet/dist/images/**/*\" static/dist/images/",
     "watch": "parcel watch",
     "clean": "rm -rf static/dist"
   },
+  "browserslist": "> 0.5%, last 2 versions, not dead",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/UCYT5040/slack-flights-canvas.git"
@@ -25,10 +26,13 @@
   },
   "homepage": "https://github.com/UCYT5040/slack-flights-canvas#readme",
   "devDependencies": {
+    "@types/leaflet": "^1.9.20",
     "cpx": "^1.5.0",
-    "parcel": "^2.15.4"
+    "parcel": "^2.15.4",
+    "parcel-reporter-bundle-manifest": "^1.0.0"
   },
   "dependencies": {
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "leaflet-rotatedmarker": "^0.2.0"
   }
 }
