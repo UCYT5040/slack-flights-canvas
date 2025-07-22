@@ -21,7 +21,7 @@ export interface IconOptions {
 // TODO: Implement popup functionality through MarkerState
 export interface MarkerState {
     direction?: number;  // Current direction of the marker (default is 0)
-    flipped?: boolean;  // Whether the marker is flipped (default is false)
+    flipped?: boolean;  // Whether to flip the marker icon (default is false)
     coordinates: Coordinates;  // Coordinates of the marker
     zIndexOffset?: number;  // Z-index offset for the marker (optional)
 }
@@ -29,6 +29,18 @@ export interface MarkerState {
 const defaultSize = 48;
 
 export function marker(options: IconOptions, state: MarkerState): L.Icon {
+    let angle = ((state.direction || 0) + (options.rotate || 0) + 360) % 360;  // Normalize the angle to [0, 360) degrees
+
+    let flipped = false;
+    if (state.flipped) {
+        console.log("Potentially flipping icon due to state.flipped");
+        if (angle > 90 && angle < 270) {
+            console.log("Flipping icon due to angle:", angle);
+            flipped = true;  // Flip the icon if the angle is between 90 and 270 degrees
+            angle = (angle + 180) % 360;  // Adjust the angle for the flipped state
+        }
+    }
+
     // Determine the icon URL based on the flipped state
     const iconUrl = state.flipped && options.flipped ? options.flipped : options.main;
 
