@@ -58,6 +58,8 @@ def scrape_flightaware(flight_number):
                         "airport": flight_data.get("origin", {}).get("friendlyName", "Unknown Origin"),
                         "iata": flight_data.get("origin", {}).get("iata", "???"),
                         "departure_time": flight_data.get("takeoffTimes", {}).get("scheduled"),
+                        "actual_departure_time": flight_data.get("takeoffTimes", {}).get("actual") or
+                                                 flight_data.get("takeoffTimes", {}).get("estimated"),
                         "coordinates": {
                             "lat": flight_data.get("origin", {}).get("coord", [0, 0])[1],
                             "lon": flight_data.get("origin", {}).get("coord", [0, 0])[0]
@@ -67,6 +69,8 @@ def scrape_flightaware(flight_number):
                         "airport": flight_data.get("destination", {}).get("friendlyName", "Unknown Destination"),
                         "iata": flight_data.get("destination", {}).get("iata", "???"),
                         "arrival_time": flight_data.get("landingTimes", {}).get("scheduled"),
+                        "actual_arrival_time": flight_data.get("landingTimes", {}).get("actual") or
+                                               flight_data.get("landingTimes", {}).get("estimated"),
                         "coordinates": {
                             "lat": flight_data.get("destination", {}).get("coord", [0, 0])[1],
                             "lon": flight_data.get("destination", {}).get("coord", [0, 0])[0]
