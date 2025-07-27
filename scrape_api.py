@@ -40,9 +40,10 @@ def queue_busy():
 
 
 class QueueItem:
-    def __init__(self, request_id, flight_number):
+    def __init__(self, request_id, flight_number, original_flight_number=None):
         self.request_id = request_id
         self.flight_number = flight_number
+        self.original_flight_number = original_flight_number if original_flight_number is not None else flight_number
         self.in_progress = False
         self.completed = False
         self.result = None
@@ -83,9 +84,11 @@ def work():
                         continue
                 result = scrape_flightaware(item.flight_number)
                 if result:
+                    now = datetime.now()
+                    result["scraped_at"] = now.timestamp()  # Seconds since epoch
                     flight_cache[item.flight_number] = {
                         'result': result,
-                        'created_at': datetime.now()
+                        'created_at': now
                     }
                     item.complete(result)
                 else:
@@ -109,10 +112,11 @@ def scrape(flight_numbers):
     request_id = str(uuid4())
     queue_items = []
     for number in flight_numbers.split(","):
-        number = number.strip().replace(" ", "").replace("-", "").upper()
-        if not number.isalnum() or len(number) < 2 or len(number) > 10:
+        original_number = number.strip()
+        normalized_number = original_number.replace(" ", "").replace("-", "").upper()
+        if not normalized_number.isalnum() or len(normalized_number) < 2 or len(normalized_number) > 10:
             return "Invalid flight number format", 400
-        queue_items.append(QueueItem(request_id, number))
+        queue_items.append(QueueItem(request_id, normalized_number, original_flight_number=original_number))
 
     def stream():
         while len(queue_items) > 0:
@@ -121,7 +125,7 @@ def scrape(flight_numbers):
                     yield dumps({
                         "type": "flight_data",
                         "request_id": item.request_id,
-                        "flight_number": item.flight_number,
+                        "flight_number": item.original_flight_number,
                         "status": "completed",
                         "result": item.result
                     }) + "\n"
