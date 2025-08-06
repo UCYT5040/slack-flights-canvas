@@ -1,15 +1,16 @@
+import os
 import threading
 import time
-import os
-from datetime import datetime, timedelta
 from json import dumps
 from os import environ
+from queue import Queue
 from uuid import uuid4
 
+from cachetools import TTLCache, cached
 from dotenv import load_dotenv
 from flask import Flask, request, Response
 
-from scrape_flightaware import scrape_flightaware
+from scrape_flightaware import get_flight_ident, get_flight_data
 
 load_dotenv()
 
@@ -27,117 +28,105 @@ def validate_token(token):
     return True
 
 
-worker_queue = []
+ident_cache = TTLCache(maxsize=2048, ttl=60 * 60 * 24 * 7)
+ident_cache_lock = threading.Lock()
 
-flight_cache = {}
-CACHE_EXPIRATION = timedelta(minutes=2)
-BUSY_CACHE_EXPIRATION = timedelta(minutes=5)  # Special expiration for when the queue is busy
-BUSY_QUEUE_COUNT = 15  # Number of items in the queue before we consider it busy
+flight_data_cache = TTLCache(maxsize=1024, ttl=240)
+flight_data_cache_lock = threading.Lock()
 
-
-def queue_busy():
-    return len(worker_queue) >= BUSY_QUEUE_COUNT
+task_queue = Queue()
+results = {}
 
 
-class QueueItem:
-    def __init__(self, request_id, flight_number, original_flight_number=None):
-        self.request_id = request_id
-        self.flight_number = flight_number
-        self.original_flight_number = original_flight_number if original_flight_number is not None else flight_number
-        self.in_progress = False
-        self.completed = False
-        self.result = None
-        worker_queue.append(self)
-
-    def start(self):
-        self.in_progress = True
-        self.completed = False
-        self.result = None
-
-    def complete(self, result):
-        self.in_progress = False
-        self.completed = True
-        self.result = result
-        worker_queue.remove(self)
-
-    def can_pickup(self):
-        return not self.in_progress and not self.completed
+@cached(ident_cache, lock=ident_cache_lock)
+def cached_get_flight_ident(flight_number):
+    return get_flight_ident(flight_number)
 
 
-def work():
-    global worker_queue, flight_cache
+@cached(flight_data_cache, lock=flight_data_cache_lock)
+def cached_scrape_flight_page_data(ident):
+    return get_flight_data(ident)
+
+
+def get_full_flight_data(flight_number):
+    ident = cached_get_flight_ident(flight_number)
+    if not ident:
+        return None
+    return cached_scrape_flight_page_data(ident)
+
+
+def worker():
     while True:
-        if not worker_queue:
-            time.sleep(0.1)
-            continue
-        for item in list(worker_queue):
-            if item.can_pickup():
-                item.start()
-                if item.flight_number in flight_cache:
-                    cached_item = flight_cache[item.flight_number]
-                    created_at = cached_item['created_at']
-                    if queue_busy() and datetime.now() - created_at < BUSY_CACHE_EXPIRATION:
-                        item.complete(cached_item['result'])
-                        continue
-                    elif datetime.now() - created_at < CACHE_EXPIRATION:
-                        item.complete(cached_item['result'])
-                        continue
-                result = scrape_flightaware(item.flight_number)
-                if result:
-                    now = datetime.now()
-                    result["scraped_at"] = now.timestamp()  # Seconds since epoch
-                    flight_cache[item.flight_number] = {
-                        'result': result,
-                        'created_at': now
-                    }
-                    item.complete(result)
-                else:
-                    item.complete({
-                        "error": "Flight data not found or could not be scraped."
-                    })
-                break
+        request_id, original_flight_number, normalized_number = task_queue.get()
+        try:
+            result = get_full_flight_data(normalized_number)
+            if not result:
+                result = {"error": "Flight data not found or could not be scraped."}
+
+            result['original_flight_number'] = original_flight_number
+            result['scraped_at'] = time.time()
+
+            if request_id in results:
+                results[request_id].put(result)
+        finally:
+            task_queue.task_done()
+
 
 worker_threads = []
+
+
 def start_worker_threads():
     num_threads = int(os.environ.get("NUM_THREADS", os.cpu_count()))
     for _ in range(num_threads):
-        worker = threading.Thread(target=work, daemon=True)
-        worker.start()
-        worker_threads.append(worker)
+        threading.Thread(target=worker, daemon=True).start()
 
 
 @app.route("/api/scrape/<flight_numbers>")
 def scrape(flight_numbers):
     if not validate_token(request.args.get("token")):
         return "Invalid token", 403
+
     request_id = str(uuid4())
-    queue_items = []
+    flight_list = []
     for number in flight_numbers.split(","):
         original_number = number.strip()
         normalized_number = original_number.replace(" ", "").replace("-", "").upper()
-        if not normalized_number.isalnum() or len(normalized_number) < 2 or len(normalized_number) > 10:
-            continue # Ignore invalid numbers
-        queue_items.append(QueueItem(request_id, normalized_number, original_flight_number=original_number))
+        if original_number and 2 <= len(normalized_number) <= 10:
+            flight_list.append((original_number, normalized_number))
+
+    results[request_id] = Queue()
+
+    for original, normalized in flight_list:
+        task_queue.put((request_id, original, normalized))
 
     def stream():
-        while len(queue_items) > 0:
-            for item in queue_items:
-                if item.completed:
-                    yield dumps({
-                        "type": "flight_data",
-                        "request_id": item.request_id,
-                        "flight_number": item.original_flight_number,
-                        "status": "completed",
-                        "result": item.result
-                    }) + "\n"
-                    queue_items.remove(item)
-        yield dumps({
-            "type": "end",
-            "request_id": request_id,
-            "status": "completed"
-        }) + "\n"
+        items_processed = 0
+        total_items = len(flight_list)
+        try:
+            while items_processed < total_items:
+                result_data = results[request_id].get(timeout=480)
+                yield dumps({
+                    "type": "flight_data",
+                    "request_id": request_id,
+                    "flight_number": result_data.pop('original_flight_number'),
+                    "status": "completed",
+                    "result": result_data
+                }) + "\n"
+                items_processed += 1
+        except Exception as e:
+            print(f"Error while streaming results: {e}")
+        finally:
+            yield dumps({
+                "type": "end",
+                "request_id": request_id,
+                "status": "completed"
+            }) + "\n"
+            if request_id in results:
+                del results[request_id]
 
     return Response(stream(), mimetype='application/json')
 
+
 if __name__ == "__main__":
+    start_worker_threads()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), threaded=True)
