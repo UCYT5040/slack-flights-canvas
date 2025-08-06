@@ -115,7 +115,7 @@ def scrape(flight_numbers):
         original_number = number.strip()
         normalized_number = original_number.replace(" ", "").replace("-", "").upper()
         if not normalized_number.isalnum() or len(normalized_number) < 2 or len(normalized_number) > 10:
-            return "Invalid flight number format", 400
+            continue # Ignore invalid numbers
         queue_items.append(QueueItem(request_id, normalized_number, original_flight_number=original_number))
 
     def stream():
