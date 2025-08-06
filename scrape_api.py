@@ -98,11 +98,12 @@ def work():
                 break
 
 worker_threads = []
-num_threads = int(os.environ.get("NUM_THREADS", os.cpu_count()))
-for _ in range(num_threads):
-    worker = threading.Thread(target=work, daemon=True)
-    worker.start()
-    worker_threads.append(worker)
+def start_worker_threads():
+    num_threads = int(os.environ.get("NUM_THREADS", os.cpu_count()))
+    for _ in range(num_threads):
+        worker = threading.Thread(target=work, daemon=True)
+        worker.start()
+        worker_threads.append(worker)
 
 
 @app.route("/api/scrape/<flight_numbers>")
