@@ -108,7 +108,7 @@ def scrape(flight_numbers):
                 yield dumps({
                     "type": "flight_data",
                     "request_id": request_id,
-                    "flight_number": result_data.pop('original_flight_number'),
+                    "flight_number": result_data["original_flight_number"],
                     "status": "completed",
                     "result": result_data
                 }) + "\n"
